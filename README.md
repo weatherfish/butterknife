@@ -6,15 +6,18 @@ Butter Knife
 Field and method binding for Android views which uses annotation processing to generate boilerplate
 code for you.
 
- * Eliminate `findViewById` calls by using `@FindView` on fields.
- * Group multiple views in a list using `@FindViews`. Operate on all of them at once with actions,
+ * Eliminate `findViewById` calls by using `@BindView` on fields.
+ * Group multiple views in a list or array. Operate on all of them at once with actions,
    setters, or properties.
  * Eliminate anonymous inner-classes for listeners by annotating methods with `@OnClick` and others.
+ * Eliminate resource lookups by using resource annotations on fields.
 
 ```java
 class ExampleActivity extends Activity {
-  @FindView(R.id.user) EditText username;
-  @FindView(R.id.pass) EditText password;
+  @BindView(R.id.user) EditText username;
+  @BindView(R.id.pass) EditText password;
+
+  @BindString(R.string.login_error) String loginErrorMessage;
 
   @OnClick(R.id.submit) void submit() {
     // TODO call server...
@@ -38,20 +41,76 @@ __Remember: A butter knife is like [a dagger][1] only infinitely less sharp.__
 Download
 --------
 
-Download [the latest JAR][2] or grab via Maven:
-```xml
-<dependency>
-  <groupId>com.jakewharton</groupId>
-  <artifactId>butterknife</artifactId>
-  <version>6.1.0</version>
-</dependency>
-```
-or Gradle:
+Configure your project-level `build.gradle` to include the 'android-apt' plugin:
+
 ```groovy
-compile 'com.jakewharton:butterknife:6.1.0'
+buildscript {
+  repositories {
+    mavenCentral()
+   }
+  dependencies {
+    classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
+  }
+}
 ```
 
+Then, apply the 'android-apt' plugin in your module-level `build.gradle` and add the Butter Knife
+dependencies:
+
+```groovy
+apply plugin: 'android-apt'
+
+android {
+  ...
+}
+
+dependencies {
+  compile 'com.jakewharton:butterknife:8.4.0'
+  apt 'com.jakewharton:butterknife-compiler:8.4.0'
+}
+```
+
+Note: If you are using the new Jack compiler with version 2.2.0 or newer you do not need the
+'android-apt' plugin and can instead replace `apt` with `annotationProcessor` when declaring the
+compiler dependency.
+
 Snapshots of the development version are available in [Sonatype's `snapshots` repository][snap].
+
+
+
+Library projects
+--------------------
+
+To use Butter Knife in a library, add the plugin to your `buildscript`:
+
+```groovy
+buildscript {
+  repositories {
+    mavenCentral()
+   }
+  dependencies {
+    classpath 'com.jakewharton:butterknife-gradle-plugin:8.4.0'
+  }
+}
+```
+
+and then apply it in your module:
+
+```groovy
+apply plugin: 'com.android.library'
+apply plugin: 'com.jakewharton.butterknife'
+```
+
+Now make sure you use `R2` instead of `R` inside all Butter Knife annotations.
+
+```java
+class ExampleActivity extends Activity {
+  @BindView(R2.id.user) EditText username;
+  @BindView(R2.id.pass) EditText password;
+...
+}
+```
+
 
 
 License

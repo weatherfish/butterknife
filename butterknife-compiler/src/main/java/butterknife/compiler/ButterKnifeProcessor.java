@@ -440,11 +440,10 @@ public final class ButterKnifeProcessor extends AbstractProcessor {
 
     BindingSet.Builder builder = builderMap.get(enclosingElement);
     if (builder != null) {
-      ViewBindings viewBindings = builder.getViewBinding(getId(id));
-      if (viewBindings != null && viewBindings.getFieldBinding() != null) {
-        FieldViewBinding existingBinding = viewBindings.getFieldBinding();
+      String existingBindingName = builder.findExistingBindingName(getId(id));
+      if (existingBindingName != null) {
         error(element, "Attempt to use @%s for an already bound ID %d on '%s'. (%s.%s)",
-            BindView.class.getSimpleName(), id, existingBinding.getName(),
+            BindView.class.getSimpleName(), id, existingBindingName,
             enclosingElement.getQualifiedName(), element.getSimpleName());
         return;
       }
@@ -1037,7 +1036,9 @@ public final class ButterKnifeProcessor extends AbstractProcessor {
           if (methodParameterUsed.get(j)) {
             continue;
           }
-          if (isSubtypeOfType(methodParameterType, parameterTypes[j])
+          if ((isSubtypeOfType(methodParameterType, parameterTypes[j])
+                  && isSubtypeOfType(methodParameterType, VIEW_TYPE))
+              || isTypeEqual(methodParameterType, parameterTypes[j])
               || isInterface(methodParameterType)) {
             parameters[i] = new Parameter(j, TypeName.get(methodParameterType));
             methodParameterUsed.set(j);
@@ -1103,7 +1104,7 @@ public final class ButterKnifeProcessor extends AbstractProcessor {
   }
 
   private boolean isSubtypeOfType(TypeMirror typeMirror, String otherType) {
-    if (otherType.equals(typeMirror.toString())) {
+    if (isTypeEqual(typeMirror, otherType)) {
       return true;
     }
     if (typeMirror.getKind() != TypeKind.DECLARED) {
@@ -1140,6 +1141,10 @@ public final class ButterKnifeProcessor extends AbstractProcessor {
       }
     }
     return false;
+  }
+
+  private boolean isTypeEqual(TypeMirror typeMirror, String otherType) {
+    return otherType.equals(typeMirror.toString());
   }
 
   private BindingSet.Builder getOrCreateBindingBuilder(
